@@ -296,6 +296,8 @@ async function getAppleMusicData(env: Env, musicUserToken: string) {
 		});
 
 		if (response.status > HTTP_NO_CONTENT || !response.body) {
+			const errorBody = await response.text().catch(() => 'Could not read response body');
+			console.error(`Apple Music API Error: ${response.status} ${response.statusText}`, errorBody);
 			return {
 				isPlaying: false,
 				timeStamp: new Date().toISOString(),
