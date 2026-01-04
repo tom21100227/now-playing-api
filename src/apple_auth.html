@@ -2,19 +2,20 @@
 <html>
 <head>
   <title>Apple Music Token Generator</title>
-  <script src="https://js-cdn.music.apple.com/musickit/v1/musickit.js"></script>
+  <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js" data-web-components async></script>
 </head>
 <body>
   <h1>Get Your Apple Music User Token</h1>
-  <p>1. Run your Cloudflare Worker (npx wrangler dev) and copy the 'developerToken' value.</p>
-  <p>2. Paste it below and click the button.</p>
+  <p>1. Run your Cloudflare Worker locally: <code>npx wrangler dev</code></p>
+  <p>2. Get the developer token: <code>curl http://localhost:8787/token</code></p>
+  <p>3. Paste it below and click the button.</p>
 
   <textarea id="dev-token" placeholder="Paste your Developer Token here..." style="width: 100%; height: 100px;"></textarea>
   <br/><br/>
   <button id="login-btn">Log In to Apple Music</button>
 
   <h2>Your Music User Token:</h2>
-  <pre id="token-output" style="background-color: #eee; padding: 10px; word-wrap: break-word;">(Token will appear here)</pre>
+  <pre id="token-output" style="background-color: #eee; padding: 10px; word-wrap: break-word; white-space: pre-wrap;">(Token will appear here)</pre>
 
   <script>
     const loginButton = document.getElementById('login-btn');
@@ -22,25 +23,41 @@
     const tokenOutput = document.getElementById('token-output');
 
     loginButton.addEventListener('click', async () => {
-      if (!devTokenInput.value) {
+      if (!devTokenInput.value.trim()) {
         tokenOutput.textContent = 'Please paste in your developer token first.';
         return;
       }
 
       try {
-        const music = await MusicKit.configure({
-          developerToken: devTokenInput.value,
+        tokenOutput.textContent = 'Configuring MusicKit...';
+
+        // MusicKit v3 configuration
+        await MusicKit.configure({
+          developerToken: devTokenInput.value.trim(),
           app: {
-            name: 'My Auth App',
+            name: 'Now Playing API',
             build: '1.0.0'
           }
         });
 
-        const userToken = await music.authorize();
-        tokenOutput.textContent = userToken;
+        const music = MusicKit.getInstance();
+
+        tokenOutput.textContent = 'Requesting authorization...';
+
+        // Request user authorization
+        await music.authorize();
+
+        // Get the Music User Token
+        const userToken = music.musicUserToken;
+
+        if (userToken) {
+          tokenOutput.textContent = userToken;
+        } else {
+          tokenOutput.textContent = 'Authorization succeeded but no user token was returned. Please try again.';
+        }
       } catch (error) {
-        console.error(error);
-        tokenOutput.textContent = `An error occurred: ${error.message}`;
+        console.error('MusicKit Error:', error);
+        tokenOutput.textContent = `An error occurred: ${error.message || error}`;
       }
     });
   </script>
