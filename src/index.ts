@@ -64,8 +64,24 @@ interface ApiResponse {
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+		const url = new URL(request.url);
+
+		// Endpoint to get Apple Developer Token for auth flow
+		if (url.pathname === '/token') {
+			const developerToken = await getAppleDeveloperToken(env);
+			if (!developerToken) {
+				return new Response(JSON.stringify({ error: 'Failed to generate developer token' }), {
+					status: 500,
+					headers: { 'Content-Type': 'application/json' },
+				});
+			}
+			return new Response(JSON.stringify({ developerToken }, null, 2), {
+				headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+			});
+		}
+
 		// If the request specified cache=false, skip the cache
-		if (new URL(request.url).searchParams.get(NO_CACHE_PARAM) === NO_CACHE_VALUE) {
+		if (url.searchParams.get(NO_CACHE_PARAM) === NO_CACHE_VALUE) {
 			console.log('Cache bypassed due to request parameter.');
 			env.RESULT_CACHE.delete(NOW_PLAYING_CACHE_KEY);
 		} else {
