@@ -214,20 +214,26 @@ async function getNowPlaying(accessToken: string) {
 	}
 
 	const song: any = await response.json();
+	const track = song.item;
+
+	if (!track || song.currently_playing_type !== 'track' || track.type !== 'track') {
+		console.log('Spotify: Currently Playing endpoint returned no track data.');
+		return { success: true, isPlaying: false, timeStamp: new Date(0).toISOString() };
+	}
 
 	// We are structuring the response to only include the data we care about.
-	console.log('Spotify: Query Successful, currently playing:', song.item.name);
+	console.log('Spotify: Query Successful, currently playing:', track.name);
 	return {
 		success: true,
 		source: 'Spotify',
 		timeStamp: new Date(song.timestamp).toISOString(),
-		duration: song.item.duration_ms, // Duration in milliseconds
+		duration: track.duration_ms, // Duration in milliseconds
 		isPlaying: song.is_playing,
-		title: song.item.name,
-		artist: song.item.artists.map((_artist: any) => _artist.name).join(', '),
-		album: song.item.album.name,
-		albumImageUrl: song.item.album.images[0].url,
-		songUrl: song.item.external_urls.spotify,
+		title: track.name,
+		artist: track.artists?.map((_artist: any) => _artist.name).join(', '),
+		album: track.album?.name,
+		albumImageUrl: track.album?.images?.[0]?.url,
+		songUrl: track.external_urls?.spotify,
 	};
 }
 
@@ -249,22 +255,27 @@ async function getSpotifyRecentlyPlayed(accessToken: string) {
 	}
 
 	const songs: any = await response.json();
+	const mostRecent = songs.items?.[0];
+	const track = mostRecent?.track;
 
-	const mostRecent = songs.items[0];
+	if (!track || track.type !== 'track') {
+		console.log('Spotify Recently Played: No track data returned.');
+		return { success: true, isPlaying: false, timeStamp: new Date(0).toISOString() };
+	}
 
 	// We are structuring the response to only include the data we care about.
-	console.log('Spotify: Query Successful, recently playing:', mostRecent.track.name);
+	console.log('Spotify: Query Successful, recently playing:', track.name);
 	return {
 		success: true,
 		source: 'Spotify',
 		timeStamp: new Date(mostRecent.played_at).toISOString(),
-		duration: mostRecent.track.duration_ms, // Duration in milliseconds
+		duration: track.duration_ms, // Duration in milliseconds
 		isPlaying: false,
-		title: mostRecent.track.name,
-		artist: mostRecent.track.artists.map((_artist: any) => _artist.name).join(', '),
-		album: mostRecent.track.album.name,
-		albumImageUrl: mostRecent.track.album.images[0].url,
-		songUrl: mostRecent.track.external_urls.spotify,
+		title: track.name,
+		artist: track.artists?.map((_artist: any) => _artist.name).join(', '),
+		album: track.album?.name,
+		albumImageUrl: track.album?.images?.[0]?.url,
+		songUrl: track.external_urls?.spotify,
 	};
 }
 
