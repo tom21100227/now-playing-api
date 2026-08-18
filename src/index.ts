@@ -110,6 +110,11 @@ export default {
 		} else if (apple.isPlaying) {
 			console.log('Returning Apple Music data (is playing):', apple.title);
 			responseData = apple;
+		} else if (spotify.success !== apple.success) {
+			// Error responses are stamped with the current time, which would always
+			// beat a real played-at timestamp — so prefer the successful source.
+			responseData = spotify.success ? spotify : apple;
+			console.log('Returning', spotify.success ? 'Spotify' : 'Apple Music', 'data (other source failed):', responseData.title);
 		} else {
 			// Compare timestamps to find the most recent
 			const spotifyTime = spotify.timeStamp ? new Date(spotify.timeStamp).getTime() : 0;
